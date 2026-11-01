@@ -17,6 +17,7 @@ export interface PatientProfile {
   knownConditions: string   // e.g. "Diabetes, Hypertension"
   allergies: string
   emergencyContacts: EmergencyContact[]
+  preferredLanguage: string // chatbot default language: en|hi|mr|ta|te|bn
   createdAt: string
   lastLogin: string
 }
@@ -25,6 +26,7 @@ export interface PatientProfile {
 
 const PATIENTS_KEY = 'mediconnect_patients'
 const SESSION_KEY  = 'mediconnect_patient_session'   // stores phone of logged-in patient
+const CHAT_LANG_KEY = 'mediconnect_chat_language'    // stores preferred chatbot language
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,20 @@ export function setPatientSession(phone: string): void {
 
 export function clearPatientSession(): void {
   localStorage.removeItem(SESSION_KEY)
+}
+
+// ─── Chatbot language preference ──────────────────────────────────────────────
+
+export function getChatLanguage(): string | null {
+  try {
+    return localStorage.getItem(CHAT_LANG_KEY)
+  } catch { return null }
+}
+
+export function setChatLanguage(lang: string): void {
+  try {
+    localStorage.setItem(CHAT_LANG_KEY, lang)
+  } catch { /* ignore */ }
 }
 
 // ─── Blood group options ───────────────────────────────────────────────────────

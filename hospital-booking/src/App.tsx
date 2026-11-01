@@ -22,12 +22,16 @@ import SpecialtiesPage     from './pages/SpecialtiesPage'
 import DoctorsPage         from './pages/DoctorsPage'
 import CompareHospitalsPage from './pages/CompareHospitalsPage'
 import MedicalRecordsPage  from './pages/MedicalRecordsPage'
+import PrescriptionsPage   from './pages/PrescriptionsPage'
+import LabTestsPage        from './pages/LabTestsPage'
+import FamilyPage          from './pages/FamilyPage'
 import PatientLoginPage    from './pages/PatientLoginPage'
+import { getPatientSession } from './data/patientAuth'
 import AdminRouter from './pages/admin/AdminRouter'
 
 const VALID_PAGES: Page[] = [
   'hospitals','hospital-detail','book','confirmation',
-  'my-appointments','specialties','doctors','compare-hospitals','medical-records','patient-login',
+  'my-appointments','specialties','doctors','compare-hospitals','medical-records','patient-login','prescriptions','lab-tests','family',
 ]
 
 function PageRouter() {
@@ -35,6 +39,7 @@ function PageRouter() {
   const [showAdmin, setShowAdmin]         = useState(false)
   const [showEmergency, setShowEmergency] = useState(false)
   const [autoDispatch, setAutoDispatch]   = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!getPatientSession())
 
   const openAdmin     = () => setShowAdmin(true)
   const exitAdmin     = () => { setShowAdmin(false); navigate('landing') }
@@ -60,9 +65,19 @@ function PageRouter() {
 
   if (showAdmin) return <>{<AdminRouter onExitAdmin={exitAdmin} />}{overlays}</>
 
+  // ── Auth gate: first-time visitors must sign in or register ──
+  if (!isAuthenticated) {
+    return (
+      <PatientLoginPage
+        onSuccess={() => { setIsAuthenticated(true); navigate('landing') }}
+        onAdminClick={openAdmin}
+      />
+    )
+  }
+
   if (page === 'patient-login') return (
     <>
-      <PatientLoginPage onSuccess={() => navigate('landing')} onSkip={() => navigate('landing')} />
+      <PatientLoginPage onSuccess={() => navigate('landing')} onSkip={() => navigate('landing')} onAdminClick={openAdmin} />
       {overlays}
     </>
   )
@@ -70,7 +85,7 @@ function PageRouter() {
   if (page === 'landing') return (
     <>
       <div className="bg-[#030d18]">
-        <Hero onAdminClick={openAdmin} onEmergencyClick={openEmergency} />
+        <Hero onAdminClick={openAdmin} onEmergencyClick={openEmergency} onSignOut={() => setIsAuthenticated(false)} />
         <QuoteSection />
         <StatsSection />
         <HowItWorksSection />
@@ -87,7 +102,7 @@ function PageRouter() {
   return (
     <>
       <div className="bg-[#030d18] min-h-screen">
-        <Navbar onAdminClick={openAdmin} onEmergencyClick={openEmergency} />
+        <Navbar onAdminClick={openAdmin} onEmergencyClick={openEmergency} onSignOut={() => setIsAuthenticated(false)} />
         {page === 'hospitals'       && <HospitalsPage />}
         {page === 'hospital-detail' && <HospitalDetailPage />}
         {page === 'book'            && <BookingPage />}
@@ -97,6 +112,9 @@ function PageRouter() {
         {page === 'doctors'         && <DoctorsPage />}
         {page === 'compare-hospitals' && <CompareHospitalsPage />}
         {page === 'medical-records' && <MedicalRecordsPage />}
+        {page === 'prescriptions'  && <PrescriptionsPage />}
+        {page === 'lab-tests'      && <LabTestsPage />}
+        {page === 'family'         && <FamilyPage />}
         <Footer onAdminClick={openAdmin} />
       </div>
       {overlays}

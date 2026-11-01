@@ -243,14 +243,20 @@ export default function EmergencyModal({ onClose, autoDispatch = false }: Props)
 
   // ── Get live GPS location ──
   function startLocation(): Promise<LiveLocation> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!('geolocation' in navigator)) {
-        // Fallback with approximate coords
-        resolve({ lat: 19.0760, lng: 72.8777, accuracy: 1000, address: 'Mumbai, Maharashtra (approximate)', timestamp: Date.now() })
+        const fallback: LiveLocation = {
+          lat: 19.0760, lng: 72.8777, accuracy: 1000,
+          address: 'Mumbai, Maharashtra (GPS not supported)',
+          timestamp: Date.now(),
+        }
+        setLiveLocation(fallback)
+        resolve(fallback)
         return
       }
-      // High-accuracy watch for live updates
-      const id = navigator.geolocation.watchPosition(
+
+      // ── Phase 1: fast low-accuracy fix so we have something ──
+      navigator.geolocation.getCurrentPosition(
         (pos) => {
           const loc: LiveLocation = {
             lat: pos.coords.latitude,
@@ -260,14 +266,117 @@ export default function EmergencyModal({ onClose, autoDispatch = false }: Props)
             timestamp: pos.timestamp,
           }
           setLiveLocation(loc)
-          resolve(loc)
+
+          // ── Phase 2: high-accuracy refinement ──
+          navigator.geolocation.getCurrentPosition(
+            async (hiPos) => {
+              const hiLoc: LiveLocation = {
+                lat: hiPos.coords.latitude,
+                lng: hiPos.coords.longitude,
+                accuracy: hiPos.coords.accuracy,
+                address: `${hiPos.coords.latitude.toFixed(5)}°N, ${hiPos.coords.longitude.toFixed(5)}°E`,
+                timestamp: hiPos.timestamp,
+              }
+
+              // ── Reverse geocode via OpenStreetMap Nominatim ──
+              try {
+                const res = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?lat=${hiPos.coords.latitude}&lon=${hiPos.coords.longitude}&format=json`,
+                  { headers: { 'Accept-Language': 'en', 'User-Agent': 'MediConnect-Emergency/1.0' } }
+                )
+                if (res.ok) {
+                  const data = await res.json()
+                  const addr = data.display_name as string
+                  // Trim to readable format: first 3 parts
+                  const parts = addr.split(',').map((s: string) => s.trim())
+                  const readable = parts.slice(0, 4).join(', ')
+                  hiLoc.address = readable || addr
+                }
+              } catch { /* keep coordinate address on network failure */ }
+
+              setLiveLocation(hiLoc)
+              resolve(hiLoc)
+            },
+            () => {
+              // If high-accuracy fails, use the phase-1 result
+              resolve(loc)
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          )
         },
-        () => {
-          const fallback: LiveLocation = { lat: 19.0760, lng: 72.8777, accuracy: 1000, address: 'Mumbai, Maharashtra (approximate — GPS denied)', timestamp: Date.now() }
-          setLiveLocation(fallback)
-          resolve(fallback)
+        (err) => {
+          // Phase 1 denied/failed — try high-accuracy as fallback
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const loc: LiveLocation = {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                address: `${pos.coords.latitude.toFixed(5)}°N, ${pos.coords.longitude.toFixed(5)}°E`,
+                timestamp: pos.timestamp,
+              }
+              try {
+                const res = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+                  { headers: { 'Accept-Language': 'en', 'User-Agent': 'MediConnect-Emergency/1.0' } }
+                )
+                if (res.ok) {
+                  const data = await res.json()
+                  const addr = data.display_name as string
+                  const parts = addr.split(',').map((s: string) => s.trim())
+                  loc.address = parts.slice(0, 4).join(', ') || addr
+                }
+              } catch { /* keep coordinate address */ }
+              setLiveLocation(loc)
+              resolve(loc)
+            },
+            () => {
+              // All attempts failed — use fallback
+              const fallback: LiveLocation = {
+                lat: 19.0760, lng: 72.8777, accuracy: 1000,
+                address: err.code === 1
+                  ? 'Location permission denied — please enable GPS in browser settings'
+                  : 'Location unavailable — using approximate position',
+                timestamp: Date.now(),
+              }
+              setLiveLocation(fallback)
+              resolve(fallback)
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+          )
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 30000 } // fast first fix
+      )
+
+      // ── Phase 3: continuous watch for live updates after dispatch ──
+      const id = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const loc: LiveLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            address: `${pos.coords.latitude.toFixed(5)}°N, ${pos.coords.longitude.toFixed(5)}°E`,
+            timestamp: pos.timestamp,
+          }
+          // Only update displayed location if better accuracy
+          setLiveLocation(prev => {
+            if (!prev || pos.coords.accuracy < prev.accuracy) {
+              // Fire reverse geocode async and update address
+              fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+                { headers: { 'Accept-Language': 'en', 'User-Agent': 'MediConnect-Emergency/1.0' } }
+              ).then(r => r.json()).then((data) => {
+                const addr = data.display_name as string
+                const parts = addr.split(',').map((s: string) => s.trim())
+                setLiveLocation(l => l ? { ...l, address: parts.slice(0, 4).join(', ') || addr } : l)
+              }).catch(() => {})
+              return loc
+            }
+            return prev
+          })
+        },
+        () => { /* watch errors are non-fatal */ },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       )
       setWatchId(id)
     })

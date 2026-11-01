@@ -207,8 +207,56 @@ body {
   to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
+/* ---------- AI Chatbot message entrance ---------- */
+@keyframes msg-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-anim { animation: msg-slide-in 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
 /* ---------- Chatbot emergency strip shimmer ---------- */
 @keyframes shimmer-bg {
   0%   { background-position: 0% center; }
   100% { background-position: 200% center; }
+}
+
+/* ---------- Navbar glow ring animation ---------- */
+@keyframes nav-ring-glow {
+  0%, 100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+  15%, 85% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleX(1.01);
+  }
+}
+
+@keyframes nav-ring-sweep {
+  0%   { opacity: 0; transform: translateX(-60%) scaleX(0.4); }
+  20%  { opacity: 1; transform: translateX(-20%) scaleX(0.8); }
+  50%  { opacity: 0.85; transform: translateX(0%)  scaleX(1);   }
+  80%  { opacity: 1; transform: translateX(20%)  scaleX(0.8); }
+  100% { opacity: 0; transform: translateX(60%)  scaleX(0.4); }
+}
+
+.nav-ring {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: nav-ring-glow 5s ease-in-out infinite;
+}
+
+.nav-ring-sweep {
+  pointer-events: none;
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  animation: nav-ring-sweep 5s ease-in-out infinite;
 }

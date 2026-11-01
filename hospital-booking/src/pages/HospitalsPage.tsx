@@ -6,10 +6,10 @@ const ALL_CITIES = ['All', ...Array.from(new Set(HOSPITALS.map((h) => h.city)))]
 const ALL_SPECIALTIES = ['All', ...Array.from(new Set(HOSPITALS.flatMap((h) => h.specialties)))]
 
 export default function HospitalsPage() {
-  const { navigate } = useApp()
+  const { navigate, selectedSpecialty } = useApp()
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('All')
-  const [specialty, setSpecialty] = useState('All')
+  const [specialty, setSpecialty] = useState(selectedSpecialty ?? 'All')
 
   const filtered = HOSPITALS.filter((h) => {
     const matchSearch =
@@ -37,7 +37,10 @@ export default function HospitalsPage() {
           Find a <span className="italic">Hospital</span>
         </h1>
         <p className="text-white/50 font-inter mt-3 text-sm md:text-base">
-          {HOSPITALS.length} hospitals listed · Select one to view doctors and book a slot
+          {specialty !== 'All'
+            ? <><span className="text-white/80 font-medium">{specialty}</span> — hospitals offering this specialty</>
+            : <>{HOSPITALS.length} hospitals listed · Select one to view doctors and book a slot</>
+          }
         </p>
       </div>
 
@@ -86,10 +89,22 @@ export default function HospitalsPage() {
       </div>
 
       {/* Results count */}
-      <div className="max-w-6xl mx-auto mb-6">
+      <div className="max-w-6xl mx-auto mb-6 flex items-center gap-3">
         <p className="text-white/30 text-xs font-inter tracking-wide">
           {filtered.length} result{filtered.length !== 1 ? 's' : ''} found
         </p>
+        {specialty !== 'All' && (
+          <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-inter px-3 py-1 rounded-full">
+            {specialty}
+            <button
+              onClick={() => setSpecialty('All')}
+              className="text-blue-300/60 hover:text-blue-300 ml-0.5 leading-none"
+              aria-label="Clear specialty filter"
+            >
+              ✕
+            </button>
+          </span>
+        )}
       </div>
 
       {/* Hospital cards grid */}

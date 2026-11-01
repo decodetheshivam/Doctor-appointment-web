@@ -54,6 +54,8 @@ export type Intent =
   | 'about'
   | 'language_change'
   | 'voice_help'
+  | 'prescription_help'
+  | 'lab_report_help'
   | 'unknown'
 
 // ─── Intent detection ─────────────────────────────────────────────────────────
@@ -75,8 +77,14 @@ export function detectIntent(text: string, lang: Language): Intent {
   // My appointments
   if (/my appointment|my booking|meri appointment|मेरी अपॉइंटमेंट/.test(t)) return 'my_appointments'
 
+  // Prescription help (must be before medical_records catch-all)
+  if (/prescription|my medicine|medicine schedule|medicine reminder|dosage|दवा|दवाई|doz|prescribed|medicine course|tablet|tablet name/.test(t)) return 'prescription_help'
+
+  // Lab report help (must be before medical_records catch-all)
+  if (/lab report|test report|blood test|lab result|report value|lab test|test result|explain report|रिपोर्ट|लैब/.test(t)) return 'lab_report_help'
+
   // Medical records
-  if (/record|prescription|medicine|report|lab|history|रिकॉर्ड|दवा|रिपोर्ट/.test(t)) return 'medical_records'
+  if (/record|medical history|health history|रिकॉर्ड/.test(t)) return 'medical_records'
 
   // Doctors
   if (/doctor|specialist|physician|डॉक्टर|विशेषज्ञ/.test(t)) return 'doctors'
@@ -255,6 +263,28 @@ const RESPONSES: ResponseMap = {
   voice_help: () => ({
     text: `🎤 **Voice Commands** are enabled!\n\nYou can say:\n• **"Find hospital"** — search hospitals\n• **"Book appointment"** — start booking\n• **"My appointments"** — view bookings\n• **"Emergency"** / **"बचाओ"** / **"மदद"** — trigger SOS\n• **"Doctors"** — browse doctors\n\nPress the 🎤 mic button and speak clearly.`,
     suggestions: ['Try voice now', 'Find hospital', '🚨 Emergency SOS'],
+  }),
+
+  prescription_help: (lang) => ({
+    text: lang === 'hi'
+      ? `💊 **प्रिस्क्रिप्शन सहायता**\n\nमैं आपकी दवाइयों के बारे में जानकारी दे सकता हूँ:\n• **दवा का नाम** — किस बीमारी के लिए है\n• **खुराक (Dosage)** — कितनी मात्रा लेनी है\n• **आवृत्ति (Frequency)** — दिन में कितनी बार\n• **अवधि (Duration)** — कितने दिनों तक\n• **निर्देश (Instructions)** — खाने के बाद/पहले\n\n⚠️ **महत्वपूर्ण:** मैं केवल जानकारी दे सकता हूँ। कोई दवा बदलने या नई दवा शुरू करने से पहले अपने डॉक्टर से परामर्श करें। मैं निदान या प्रिस्क्रिप्शन नहीं बदल सकता।`
+      : `💊 **Prescription Assistance**\n\nI can help you understand your medicines:\n• **Medicine name** — what it's commonly prescribed for\n• **Dosage** — how much to take\n• **Frequency** — how often per day\n• **Duration** — how many days to continue\n• **Instructions** — before/after meals, etc.\n\n⚠️ **Important:** I can only provide general information. Always consult your doctor before changing or stopping any medication. I cannot diagnose or modify your prescription.`,
+    suggestions: lang === 'hi'
+      ? ['मेरी प्रिस्क्रिप्शन देखें', 'दवा अनुसूची', 'दवा रिमाइंडर', 'लैब रिपोर्ट समझाएं']
+      : ['View my prescriptions', 'Medicine schedule', 'Medicine reminders', 'Explain lab report'],
+    action: 'navigate',
+    actionTarget: 'prescriptions',
+  }),
+
+  lab_report_help: (lang) => ({
+    text: lang === 'hi'
+      ? `🧪 **लैब रिपोर्ट सहायता**\n\nमैं आपकी लैब रिपोर्ट के मानों को आसान भाषा में समझा सकता हूँ:\n\n• **सामान्य (Normal)** — मान संदर्भ सीमा के भीतर है\n• **असामान्य (Abnormal)** — मान सीमा से बाहर है, डॉक्टर से सलाह लें\n• **सीमांत (Borderline)** — मान सीमा पर है, निगरानी आवश्यक\n\n⚠️ **महत्वपूर्ण:** मैं केवल सामान्य जानकारी देता हूँ। रिपोर्ट की वास्तविक व्याख्या के लिए अपने डॉक्टर से मिलें। मैं निदान नहीं कर सकता।`
+      : `🧪 **Lab Report Assistance**\n\nI can explain your lab report values in simple terms:\n\n• **Normal** — value is within the reference range\n• **Abnormal** — value is outside the range, consult your doctor\n• **Borderline** — value is at the edge, monitoring recommended\n\n⚠️ **Important:** I provide general information only. For actual interpretation of your results and medical advice, please consult your doctor. I cannot diagnose conditions.`,
+    suggestions: lang === 'hi'
+      ? ['मेरी लैब रिपोर्ट देखें', 'लैब टेस्ट बुक करें', 'प्रिस्क्रिप्शन देखें']
+      : ['View my lab reports', 'Book a lab test', 'View prescriptions'],
+    action: 'navigate',
+    actionTarget: 'lab-tests',
   }),
 
   unknown: (lang) => ({

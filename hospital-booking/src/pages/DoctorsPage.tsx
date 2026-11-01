@@ -26,9 +26,9 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function DoctorsPage() {
-  const { navigate } = useApp()
+  const { navigate, selectedSpecialty } = useApp()
   const [search, setSearch] = useState('')
-  const [specialty, setSpecialty] = useState('All')
+  const [specialty, setSpecialty] = useState(selectedSpecialty ?? 'All')
 
   const filtered = ALL_DOCTORS.filter(({ doctor }) => {
     const matchSearch =

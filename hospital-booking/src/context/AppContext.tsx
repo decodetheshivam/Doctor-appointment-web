@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 
-export type Page = 'landing' | 'hospitals' | 'hospital-detail' | 'book' | 'confirmation' | 'my-appointments' | 'specialties' | 'doctors' | 'compare-hospitals' | 'medical-records' | 'admin' | 'patient-login'
+export type Page = 'landing' | 'hospitals' | 'hospital-detail' | 'book' | 'confirmation' | 'my-appointments' | 'specialties' | 'doctors' | 'compare-hospitals' | 'medical-records' | 'admin' | 'patient-login' | 'prescriptions' | 'lab-tests' | 'family'
 
 interface AppState {
   page: Page
   selectedHospitalId: string | null
   selectedDoctorId: string | null
   lastAppointmentId: string | null
+  selectedSpecialty: string | null
 }
 
 interface AppContextType extends AppState {
@@ -21,6 +22,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selectedHospitalId: null,
     selectedDoctorId: null,
     lastAppointmentId: null,
+    selectedSpecialty: null,
   })
 
   function navigate(page: Page, params?: Partial<Omit<AppState, 'page'>>) {

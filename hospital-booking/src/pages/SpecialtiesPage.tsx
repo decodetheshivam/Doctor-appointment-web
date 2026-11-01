@@ -109,7 +109,7 @@ export default function SpecialtiesPage() {
           {filtered.map((spec) => (
             <button
               key={spec.name}
-              onClick={() => navigate('hospitals')}
+              onClick={() => navigate('hospitals', { selectedSpecialty: spec.name })}
               className="spec-pill bg-white/4 hover:bg-white/8 border border-white/8 rounded-2xl
                          p-5 flex flex-col items-start gap-3 text-left group"
             >

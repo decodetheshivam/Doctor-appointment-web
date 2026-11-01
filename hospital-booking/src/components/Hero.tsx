@@ -1,9 +1,9 @@
 import Navbar from './Navbar'
 import { useApp } from '../context/AppContext'
 
-interface HeroProps { onAdminClick: () => void; onEmergencyClick?: (auto?: boolean) => void }
+interface HeroProps { onAdminClick: () => void; onEmergencyClick?: (auto?: boolean) => void; onSignOut?: () => void }
 
-export default function Hero({ onAdminClick, onEmergencyClick }: HeroProps) {
+export default function Hero({ onAdminClick, onEmergencyClick, onSignOut }: HeroProps) {
   const { navigate } = useApp()
 
   return (
@@ -16,7 +16,7 @@ export default function Hero({ onAdminClick, onEmergencyClick }: HeroProps) {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-[#010d1a]/70 via-[#021628]/50 to-[#010A17]/90" />
 
-      <Navbar onAdminClick={onAdminClick} onEmergencyClick={onEmergencyClick} />
+      <Navbar onAdminClick={onAdminClick} onEmergencyClick={onEmergencyClick} onSignOut={onSignOut} />
 
       {/* ── Center content ── */}
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pt-20 pb-4">
@@ -124,8 +124,8 @@ export default function Hero({ onAdminClick, onEmergencyClick }: HeroProps) {
         </button>
       </div>
 
-      {/* Bottom-right scroll hint */}
-      <div className="hidden md:flex absolute bottom-8 right-8 items-center gap-2
+      {/* Bottom-center scroll hint */}
+      <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 items-center gap-2
                       text-white/40 text-xs font-inter tracking-wide">
         <span>Scroll to explore</span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
