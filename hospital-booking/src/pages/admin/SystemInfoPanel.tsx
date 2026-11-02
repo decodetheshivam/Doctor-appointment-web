@@ -57,6 +57,7 @@ function isSensitive(key: string): boolean {
   return SENSITIVE_PATTERNS.some((p) => p.test(key))
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function maskValue(key: string, value: string): string {
   return isSensitive(key) ? '[REDACTED]' : value
 }
